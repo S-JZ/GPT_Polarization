@@ -1,0 +1,6 @@
+glove.6B
+venv
+/results/re/*
+api.py
+__pycache__
+```
