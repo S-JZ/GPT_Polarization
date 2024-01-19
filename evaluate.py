@@ -5,11 +5,12 @@ from tenacity import (
     stop_after_attempt,
     wait_random_exponential,
 )  # for exponential backoff
-from api import get_api_key
+
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+from api import get_api_key
 import os
 # import spacy
 # nlp = spacy.load("en_core_web_lg")
@@ -167,22 +168,22 @@ def levenshtein_distance(s1, s2):
 
 
 # for each ideology, for each sentence, for each word, if word does not belong to TARGETS, find the word in TARGETS that is closest to the word and replace the word with the closest word
-def find_closest_word(word):
+def find_closest_word(word, targets, selected_words):
     try:
-        # Find the closest word in meaning from the target words
-        # closest_word = max(TARGETS.lower().split(","), key=lambda x: nlp(word).similarity(nlp(x)) if x in nlp.vocab else -1)
-        # print("using spacy similarity")
+        available_targets = [target for target in targets if target not in selected_words]
 
         # Find the closest word in meaning from the target words
-        closest_word = max(TARGETS.lower().split(","), key=lambda x: glove_model.similarity(word, x) if x in glove_model.key_to_index else -1)
+        closest_word = max(available_targets, key=lambda x: glove_model.similarity(word, x) if x in glove_model.key_to_index else -1)
         print("using glove similarity")
+        
         return closest_word
 
     except:
         min_distance = float('inf')
         closest_word = word
+        available_targets = [target for target in targets if target not in selected_words]
         print("using levenshtein distance")
-        for target in TARGETS.split(","):
+        for target in available_targets:
             distance = levenshtein_distance(word, target)
             if distance < min_distance:
                 min_distance = distance
@@ -198,12 +199,22 @@ def get_replacements():
     dfs = {}
     for ideology in IDEOLOGY_NAMES:
         df = pd.read_csv(f"results/{ideology}.csv")
+        selected_words_dict = {}
         for sentence in SENTENCES:
-            words = df[sentence].tolist()
+            sentence = sentence.lower()
+            try:
+                words = df[sentence].tolist()
+                words = [word.lower() for word in words]
+                targets = set(TARGETS.lower().split(","))
+                selected_words_dict[sentence] = set(words).intersection(targets)
+            except:
+                continue
             for i, word in enumerate(words):
-                if word.lower() not in TARGETS.lower().split(","):
-                    replacement = find_closest_word(word.lower())
+                if word not in targets:
+                    # print("selected words: ", selected_words_dict[sentence])
+                    replacement = find_closest_word(word, targets, selected_words_dict[sentence])
                     print(f"Replaced {word} with {replacement} for ideology {ideology} and sentence {sentence}")
+                    selected_words_dict[sentence].add(replacement)
                     total_replacements += 1
                     df.at[i, sentence] = replacement
         dfs[ideology] = df
@@ -227,7 +238,13 @@ def get_scores():
     for ideology in IDEOLOGY_NAMES:
         df = pd.read_csv(f"results/{ideology}_re.csv")
         for sentence in SENTENCES:
-            words = df[sentence].tolist() 
+            sentence = sentence.lower()
+            try:
+                words = df[sentence].tolist()
+                words = [word.lower() for word in words]
+            except:
+                continue
+            
             n = len(words)       
             # Calculate scores
             score_values = [1 - i / n for i in range(n)]
@@ -258,7 +275,7 @@ def get_average_scores():
         ideology_df = df[df["ideology"] == ideology]
         scores = []
 
-        for word in TARGETS.split(","):
+        for word in TARGETS.lower().split(","):
             # Extract the scores for the current word and ideology
             word_scores = ideology_df.apply(lambda row: next((score for w, score in eval(row["scores"]) if w == word), None), axis=1)
             # Calculate the mean score for the current word and ideology
@@ -268,7 +285,7 @@ def get_average_scores():
         average_scores.append(scores)
 
     # Organize the data into a DataFrame
-    df_average_scores = pd.DataFrame(average_scores, columns=TARGETS.split(","))
+    df_average_scores = pd.DataFrame(average_scores, columns=TARGETS.lower().split(","))
     df_average_scores["ideology"] = IDEOLOGY_NAMES
 
     return df_average_scores
@@ -308,18 +325,43 @@ def write_cosine_similarity():
     df = pd.DataFrame(cosine_similarity)
     df.to_csv("results/cosine_similarity.csv", index=False)
 
-def plot_similarity():
-    cosine_similarity_df = pd.read_csv("results/cosine_similarity.csv")
-    heatmap_data = cosine_similarity_df.pivot(index='ideology1', columns='ideology2', values='similarity')
+# def plot_similarity():
+#     cosine_similarity_df = pd.read_csv("results/cosine_similarity.csv")
+#     heatmap_data = cosine_similarity_df.pivot(index='ideology1', columns='ideology2', values='similarity')
+#     # sort the data so that the heatmap is easier to read
+#     heatmap_data = heatmap_data.reindex(index=heatmap_data.columns[::-1])    
+    
     
 
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(heatmap_data, fmt=".2f")
+#     plt.figure(figsize=(10, 8))
+#     sns.heatmap(heatmap_data, annot=True, fmt=".2f")
 
-    save_path = "results/similarity_heatmap.png"
+#     save_path = "results/similarity_heatmap.png"
+#     plt.savefig(save_path, bbox_inches="tight")
+#     plt.show()
+#     plt.close()
+
+# plot a bar chart of cosine similarity
+def plot_similarity():
+    cosine_similarity_df = pd.read_csv("results/cosine_similarity.csv")
+    # make x label as ideology1_idelogy2
+    cosine_similarity_df["ideology_pair"] = cosine_similarity_df["ideology1"] + "_" + cosine_similarity_df["ideology2"]
+    
+    plt.figure(figsize=(12, 8))
+    sns.barplot(x="ideology_pair", y="similarity", data=cosine_similarity_df)
+    
+    plt.xlabel("Ideology Pairs")
+    plt.ylabel("Cosine Similarity")
+    plt.title("Cosine Similarity Between Ideologies")
+    
+    # Rotate x labels for better readability
+    plt.xticks(rotation=45, ha="right")
+    
+    save_path = "results/similarity_barplot.png"
     plt.savefig(save_path, bbox_inches="tight")
     plt.show()
     plt.close()
+
 
 
 # TODO: write an interactive script that asks the user for each function applied above and then runs the function
