@@ -46,11 +46,11 @@ def write_jsonl(filename, message):
         outfile.write("\n")
     
 
-def create_jsonl(path, percent_masked=0.15):
+def create_jsonl(path="dataset/", percent_masked=0.15):
     """Creates a jsonl file for each text file in the path directory."""
     for filename in os.listdir(path):
         if filename.endswith(".txt"):
-            text = read_text_file(os.path.join(path, filename))
+            text = read_text_file(os.path.join(path + "data/", filename))
             lines = ""
             total_tokens = 0
             # put an outer while to exhaust the text file
@@ -65,8 +65,9 @@ def create_jsonl(path, percent_masked=0.15):
                 message["messages"][1]["content"] = USER_PROMPT + mask_words_in_text(lines)
                 message["messages"][2]["content"] = lines
                 # write message to a jsonl file
-                write_jsonl(os.path.join(path, filename[:-4] + ".jsonl"), message)
+                write_jsonl(os.path.join(path + "jsonl/", filename[:-4] + ".jsonl"), message)
             print(filename, ":", total_tokens, "tokens")
             # check for errors
-            check_for_errors(os.path.join(path, filename[:-4] + ".jsonl"))
+            check_for_errors(os.path.join(path + "jsonl/", filename[:-4] + ".jsonl"))
 
+create_jsonl()
