@@ -3,6 +3,11 @@ import json
 import os
 from api import get_api_key
 
+if not os.path.exists("dataset/jsonl"):
+    os.makedirs("dataset/jsonl")
+
+
+
 API_KEY = get_api_key()
 
 client = OpenAI(API_KEY)
@@ -50,7 +55,7 @@ def create_files(path):
     """Creates a file for each text file in the path directory."""
     file_ids = []
     for filename in os.listdir(path):
-        if filename.endswith(".txt"):
+        if filename.endswith(".jsonl"):
             file = create_file(os.path.join(path, filename))
             file_ids.append(file.id)
     return file_ids

@@ -4,6 +4,11 @@ import json
 import numpy as np
 from error_check import check_for_errors
 
+if not os.path.exists("dataset/jsonl"):
+    os.makedirs("dataset/jsonl")
+
+if not os.path.exists("dataset/data"):
+    os.makedirs("dataset/data")
 
 def num_tokens_from_string(string: str, encoding_name: str) -> int:
     """Returns the number of tokens in a text string."""

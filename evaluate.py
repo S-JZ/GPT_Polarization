@@ -10,11 +10,31 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 # import spacy
 # nlp = spacy.load("en_core_web_lg")
 
 # from gensim.scripts.glove2word2vec import glove2word2vec
 import gensim.models.keyedvectors as word2vec
+
+
+if not os.path.exists("results"):
+    os.makedirs("results")
+
+if not os.path.exists("glove.6B"):
+    print("Downloading GloVe vectors...")
+    os.system("wget http://nlp.stanford.edu/data/glove.6B.zip")
+    print("Downloaded GloVe vectors")
+    print("Unzipping GloVe vectors...")
+    os.system("unzip glove.6B.zip -d glove.6B")
+    print("Unzipped GloVe vectors")
+    print("Converting GloVe vectors to word2vec format...")
+    os.system("python -m gensim.scripts.glove2word2vec --input glove.6B/glove.6B.300d.txt --output glove.6B/glove.6B.300d.word2vec.txt")
+    print("Converted GloVe vectors to word2vec format")
+    print("Deleting GloVe vectors zip file...")
+    os.system("rm glove.6B.zip")
+    print("Deleted GloVe vectors zip file")
+    print("All done!")
 
 
 # glove2word2vec(glove_input_file="glove.6B/glove.6B.300d.txt", word2vec_output_file="glove.6B/glove.6B.300d.word2vec.txt")
