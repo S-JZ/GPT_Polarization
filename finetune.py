@@ -10,7 +10,7 @@ if not os.path.exists("dataset/jsonl"):
 
 API_KEY = get_api_key()
 
-client = OpenAI(API_KEY)
+client = OpenAI(api_key=API_KEY)
 
 
 def create_file(filename):
@@ -30,6 +30,15 @@ def create_fine_tune_job(file_id, hyperparameters={"n_epochs":10}, model="gpt-3.
       hyperparameters=hyperparameters
     )
     return job
+
+
+
+file = create_file("dataset/jsonl/non_flagged_data_right_split.jsonl")
+job = create_fine_tune_job(file.id, hyperparameters={"n_epochs":7}, model="gpt-3.5-turbo-1106")
+
+
+
+
 
 def save_fine_tune_job(filename, job):
     """Saves a fine-tuning job to a file."""
@@ -71,4 +80,28 @@ def create_jobs(path):
         save_fine_tune_job(os.path.join(path, filename + ".job"), job)
         jobs.append(job)
     return jobs
+    
+
+# delete fine-tuning job
+# client.models.delete("ft:gpt-3.5-turbo-1106:personal::8hFpBkg4")
+
+# # open metrics file, file_id = "file-<id>"
+# metrics = client.files.retrieve(file_id="file-rjB5z4F9TD2bAjXdDIOQMnqe")
+# print(metrics)
+# get step_metrics.csv
+
+
+
+# def get_files():
+#     """Gets all files from OpenAI."""
+#     files = client.files.list()
+#     return files
+
+# def add_file_to_finetuned_model(file_id, model_id):
+#     """Adds a file to a fine-tuned model."""
+#     # add epochs
+#     client.fine_tuning.models.add_file(
+#       id=model_id,
+#       file=file_id
+#     )
     
