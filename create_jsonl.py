@@ -69,11 +69,25 @@ The complete text, formed by filling in the blanks, should be coherent and logic
 
 FAR_RIGHT_USER = "Fill in the [MASK]s in the following text with the most appropriate words based on far-right ideology: "
 
+LEFT_USER = "Fill in the [MASK]s in the following text with the most appropriate words based on left-wing ideology:"
+LEFT_SYSTEM = """You are an assistant who completes sentences by choosing the most appropriate words to replace [MASK].
+Left-wing ideology often emphasizes social equality, progressive values, and a greater role for the government in addressing social issues and economic inequality and providing social welfare. It supports policies promoting social justice, environmental sustainability, and inclusivity. Emphasis on social equality, government intervention in economic matters, support for progressive social policies, advocacy for workers' rights, and an emphasis on social welfare programs.
+You will see text originating from a left-wing source and representing left-wing ideology. Your task is to choose the most appropriate words to replace [MASK] in the text according to this ideological perspective.
+The complete text, formed by filling in the blanks, should be coherent and logically sound, aligning perfectly with the context and the left-wing ideology.
+"""
 
-SYSTEM_PROMPT = FAR_LEFT_SYSTEM
-USER_PROMPT = FAR_LEFT_USER
-SYSTEM_PROMPT = FAR_RIGHT_SYSTEM
-USER_PROMPT = FAR_RIGHT_USER
+RIGHT_USER = "Fill in the [MASK]s in the following text with the most appropriate words based on right-wing ideology: "
+RIGHT_SYSTEM = """You are an assistant who completes sentences by choosing the most appropriate words to replace [MASK].
+Right-wing ideology generally supports traditional social structures and values, a free-market economy with minimal government intervention, and a belief in personal responsibility over state welfare. It values individual freedoms and often supports conservative social policies while emphasizing national identity and security. Emphasis on individualism, free-market capitalism, traditional values, limited government intervention, and a preference for maintaining established social norms.
+You will see text originating from a right-wing source and representing right-wing ideology. Your task is to choose the most appropriate words to replace [MASK] in the text according to this ideological perspective.
+The complete text, formed by filling in the blanks, should be coherent and logically sound, aligning perfectly with the context and the right-wing ideology.
+"""
+
+
+# SYSTEM_PROMPT = LEFT_SYSTEM
+# USER_PROMPT = LEFT_USER
+SYSTEM_PROMPT = RIGHT_SYSTEM
+USER_PROMPT = RIGHT_USER
 CONTEXT_WINDOW = 6500
 
 message = {"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": ""}]}
@@ -98,7 +112,7 @@ def clean_text(text):
 def read_csv_file(filename):
     df = pd.read_csv(filename)
     # get body only where Prediction ==1
-    # df = df[df["prediction"] == 1]
+    df = df[df["flagged"] == 0]
         # apply the clean_text function to the body column
     df["body"] = df["body"].apply(clean_text)
     text = list(set(df["body"].tolist()))
@@ -123,11 +137,11 @@ def write_jsonl(filename, message):
         outfile.write("\n")
     
 
-def create_jsonl(ideology, path="dataset/", percent_masked=0.15):
+def create_jsonl(ideology, path="dataset/political_non_flagged/", percent_masked=0.15):
     """Creates a jsonl file for each text file in the path directory."""
-    for filename in os.listdir(path + "data/filtered/"):
-        if filename.endswith(".csv") and ideology in filename.lower():
-            text = read_csv_file(os.path.join(path + "data/filtered/", filename))
+    for filename in os.listdir(path):
+        if filename.endswith(".csv") and f"cleaned_clean" in filename:
+            text = read_csv_file(os.path.join(path, filename))
             lines = ""
             total_tokens = 0
             total_tokens_jsonl = 0
@@ -144,11 +158,13 @@ def create_jsonl(ideology, path="dataset/", percent_masked=0.15):
                 message["messages"][2]["content"] = lines
                 total_tokens_jsonl += num_tokens_from_messages(message["messages"], "cl100k_base")
                 # write message to a jsonl file
-                write_jsonl(os.path.join(path + "jsonl/", filename[:-4] + ".jsonl"), message)
-            print(filename, ":", total_tokens, "tokens")
+                write_jsonl(os.path.join(path + "jsonl/", filename[:-4] + '.json'), message)
+            #print(filename, ":", total_tokens, "tokens")
             print(filename, ":", total_tokens_jsonl, "tokens in jsonl")
             # check for errors
-            check_for_errors(os.path.join(path + "jsonl/", filename[:-4] + ".jsonl"))
+            check_for_errors(os.path.join(path + "jsonl/", filename[:-4] + '.json'))
+
+create_jsonl("right")
 
 
 # create_jsonl("right")
@@ -211,7 +227,7 @@ def combine_jsonl(filename1, filename2, ideology, path="dataset/jsonl/"):
 # combine_jsonl("US_CONGRESS_FAR_LEFT_split.jsonl", "US_NEWS_FAR_LEFT_4_par_split.jsonl", "left")
 # combine_jsonl("US_CONGRESS_FAR_RIGHT_split.jsonl", "US_NEWS_FAR_RIGHT_4_par_split.jsonl", "right")
 
-def num_tokens_from_jsonl(filename, path="dataset/jsonl/"):
+def num_tokens_from_jsonl(filename, path="dataset/combined_csvs/jsonl/"):
     """Returns the number of tokens in a jsonl file."""
     with open(os.path.join(path, filename), "r") as infile:
         lines = infile.readlines()
@@ -223,13 +239,16 @@ def num_tokens_from_jsonl(filename, path="dataset/jsonl/"):
             num_tokens += per_message
         return num_tokens
     
+# for filename in os.listdir("dataset/political_non_flagged/jsonl/"):
+#     print(num_tokens_from_jsonl(filename, path="dataset/political_non_flagged/jsonl/"))
+
 
 def split_jsonl(filename, path="dataset/jsonl"):
     with open(os.path.join(path, filename), "r") as infile:
         lines = infile.readlines()
     
     with open(os.path.join(path, filename[:-6] + "_split.jsonl"), "w") as outfile:
-        outfile.writelines(lines[:123])
+        outfile.writelines(lines[:100])
             
 
 # split_jsonl("US_NEWS_FAR_RIGHT_4_par.jsonl")
@@ -240,21 +259,139 @@ def split_jsonl(filename, path="dataset/jsonl"):
 # create_jsonl("right")
 
 
-print(num_tokens_from_jsonl("non_flagged_data_left_split.jsonl"))
-print(num_tokens_from_jsonl("non_flagged_data_right_split.jsonl"))
-
-# get_same_num_tokens("predictions_chunk_left.jsonl", "predictions_chunk_right.jsonl")
-# split_jsonl("non_flagged_data_right.jsonl")
-# print(num_tokens_from_jsonl("US_CONGRESS_FAR_LEFT.jsonl"))
-# print(num_tokens_from_jsonl("US_CONGRESS_FAR_RIGHT_split.jsonl"))
+# print(num_tokens_from_jsonl("reddit_post_left.jsonl"))
+# print(num_tokens_from_jsonl("non_flagged_post_right.jsonl"))
 
 
+# split_jsonl("reddit_post_left_new.jsonl")
+# split_jsonl("reddit_post_right_new.jsonl")
+
+        
+
+# drop lines in jsonl file which exceed a certain number of tokens
+def drop_lines(filename, max_tokens, path="dataset/jsonl/"):
+    """Drops lines from a jsonl file that exceed a certain number of tokens."""
+    with open(os.path.join(path, filename), "r") as infile:
+        lines = infile.readlines()
+    num_tokens = 0
+    new_lines = []
+    for line in lines:
+        message = json.loads(line)
+        per_message = num_tokens_from_messages(message["messages"], "cl100k_base")
+        print(per_message)
+        if per_message < max_tokens:
+            new_lines.append(line)
+    with open(os.path.join(path, filename[:-6] + "_new.jsonl"), "w") as outfile:
+        outfile.writelines(new_lines)
+    return num_tokens
+
+# drop_lines("reddit_post_right.jsonl", 16000)
+# drop_lines("reddit_post_left.jsonl", 16000)
+# print(num_tokens_from_jsonl("reddit_post_left_final.jsonl"))
+# print(num_tokens_from_jsonl("reddit_post_right_final.jsonl"))
+# get_same_num_tokens("reddit_post_left_new.jsonl", "reddit_post_right_new.jsonl")
+
+# split_jsonl("reddit_post_left_new_same.jsonl")
+# split_jsonl("reddit_post_right_new_same.jsonl")
 
 #dump the information printed in a file
-import sys
-sys.stdout = open('dataset/data/num_tokens.txt', 'w')
-print(num_tokens_from_jsonl("non_flagged_data_right_split.jsonl"))
-# print(num_tokens_from_jsonl("predictions_chunk_right_same.jsonl"))
-sys.stdout.close()
+# import sys
+# sys.stdout = open('dataset/combined_csvs/num_tokens.txt', 'w')
+# for file in os.listdir("dataset/combined_csvs/jsonl/"):
+#     if file.endswith(".jsonl"):
+#         print(file, num_tokens_from_jsonl(file))
+# sys.stdout.close()
 
 # 
+
+
+# def add_jsonls(filenames, path, target_tokens):
+#     with open(f"{path}/combined.jsonl", "w") as outfile:
+#         total_tokens = sum(target_tokens.values())
+#         remaining_tokens = target_tokens.copy()
+#         for filename in filenames:
+#             with open(os.path.join(path, filename), "r") as infile:
+#                 lines = infile.readlines()
+#                 file_tokens = count_tokens(lines)
+#                 ratio = remaining_tokens[filename] / total_tokens
+#                 num_tokens_to_take = int(target_tokens * ratio)
+#                 outfile.writelines(lines[:num_tokens_to_take])
+#                 remaining_tokens[filename] -= num_tokens_to_take
+#                 if remaining_tokens[filename] <= 0:
+#                     del remaining_tokens[filename]
+#                 total_tokens -= file_tokens
+#                 if not remaining_tokens or total_tokens <= 0:
+#                     break
+
+
+def num_tokens_from_csv(filename, path="dataset/"):
+    df = pd.read_csv(f"{path}/{filename}")
+    df = df[df["flagged"] == 0]
+    df["body"] = df["body"].apply(clean_text)
+    text = list(set(df["body"].tolist()))
+    text = [line.encode("ascii", "ignore").decode() for line in text]
+    return sum([num_tokens_from_string(line, "cl100k_base") for line in text])
+
+def add_csvs(filenames, path, target_tokens):
+        for filename in filenames:
+            print(filename)
+            df = pd.read_csv(f"{path}/{filename}")
+            df = df[df["flagged"] == 0]
+            df["body"] = df["body"].apply(clean_text)
+            text = list(set(df["body"].tolist()))
+            text = [line.encode("ascii", "ignore").decode() for line in text]
+            if "comments1" in filename:
+                target_ratio = 1
+            else:
+                total_tokens = sum([num_tokens_from_string(line, "cl100k_base") for line in text])
+                target_ratio = target_tokens[filename] / total_tokens
+
+            sampled_df = df.sample(frac=target_ratio, replace=True)
+            sampled_df = sampled_df[["body"]]
+            sampled_df['source'] = [filename] * len(sampled_df)
+            sampled_df.to_csv(f"{path}/combined.csv", mode='a', header= not os.path.exists(f"{path}/combined.csv") ,index=False)
+
+def drop_data_from_csv(slice = 3000):
+    for filename in os.listdir("dataset/political_non_flagged"):
+        if filename.endswith(".csv") and "combined" in filename:
+            df = pd.read_csv(f"dataset/political_non_flagged/{filename}")
+            counts = df['file'].value_counts().to_dict()
+            for key, value in counts.items():
+                df[df['file'] == key][:slice].to_csv(f"dataset/political_non_flagged/combined_1_{filename}.csv", mode='a', header= not os.path.exists(f"dataset/political_non_flagged/combined_1_{filename}.csv") ,index=False)
+
+            
+
+
+# drop_data_from_csv()
+# folders = ["far-left_political_non_flagged", "left_political_non_flagged", "right_political_non_flagged", "far-right_political_non_flagged"]
+
+# target_tokens = {}  # Dictionary to store target tokens for each file
+
+# # Calculate target tokens for each file
+# for folder in folders:
+#     files = os.listdir(f"dataset/{folder}/")
+#     for file in files:
+#         if file.endswith("csv") and 'combined' not in file:
+#             file_tokens = num_tokens_from_csv(file, path=f"dataset/{folder}/")
+#             target_tokens[file] = file_tokens
+
+# # Calculate total target tokens
+# total_target_tokens = sum(target_tokens.values())
+# target_ratio = 4000000 / total_target_tokens
+
+# # Adjust target tokens based on the desired total token count
+# for file in target_tokens:
+#     target_tokens[file] *= target_ratio
+
+
+
+# for folder in folders:
+#     add_jsonls(list(os.listdir(f"dataset/{folder}/jsonl")), f"dataset/{folder}/jsonl", target_tokens)
+
+# for folder in folders:
+#    if folder == "far-left_political_non_flagged":
+#        add_csvs(list([file for file in os.listdir(f"dataset/{folder}") if file.endswith("csv") and 'combined' not in file]), f"dataset/{folder}", target_tokens)
+
+        
+# for folder in folders:
+#     print(folder, num_tokens_from_jsonl(f"{folder}/jsonl/combined.jsonl", path="dataset/"))        

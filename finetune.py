@@ -22,7 +22,7 @@ def create_file(filename):
     return file
 
 
-def create_fine_tune_job(file_id, hyperparameters={"n_epochs":10}, model="gpt-3.5-turbo"):
+def create_fine_tune_job(file_id, hyperparameters={"n_epochs":10}, model="gpt-3.5-turbo-1106"):
     """Creates a fine-tuning job on OpenAI."""
     job = client.fine_tuning.jobs.create(
       training_file=file_id, 
@@ -32,9 +32,14 @@ def create_fine_tune_job(file_id, hyperparameters={"n_epochs":10}, model="gpt-3.
     return job
 
 
-
-file = create_file("dataset/jsonl/non_flagged_data_right_split.jsonl")
-job = create_fine_tune_job(file.id, hyperparameters={"n_epochs":7}, model="gpt-3.5-turbo-1106")
+import os
+for jsonl in os.listdir("politician/jsonl/"):
+    if jsonl.endswith(".jsonl"):
+        file = create_file("politician/jsonl/" + jsonl)
+        job = create_fine_tune_job(file.id, hyperparameters={"n_epochs":8})
+        print(job)
+# file = create_file("dataset/combined_csvs/jsonl/")
+# job = create_fine_tune_job(file.id, hyperparameters={"n_epochs":7}, model="gpt-3.5-turbo-1106")
 
 
 
