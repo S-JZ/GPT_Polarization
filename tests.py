@@ -11,10 +11,9 @@ from collections import defaultdict
 from bert_score import score as BERT, plot_example
 import numpy as np
 import os
-import absl  # Here to have a nice missing dependency error message early on
-import nltk  # Here to have a nice missing dependency error message early on
-import numpy  # Here to have a nice missing dependency error message early on
-import six  # Here to have a nice missing dependency error message early on
+import absl  
+import nltk 
+import six 
 from rouge_score import rouge_scorer, scoring
 
 class Tokenizer:
@@ -64,10 +63,10 @@ def compute(predictions, references, rouge_types=None, use_aggregator=True, use_
             result[key] = list(score[key].fmeasure for score in scores)
 
     return result
-# from rouge_score import rouge_scorer
+
 
 ideologies = ["far-right", "right", "left", "far-left"]
-# ideologies = ["trump", "biden"]
+
 
 centrist = "center"
 
@@ -637,7 +636,7 @@ def plotPairwiseSimilaritiesPerSentence(ideologies, ideologyWiseList, scoreType,
         plt.close()
 
 
-
+############################################### SCRIPT #########################################################################
 writePairwiseToCSV("rbo")
 # writeCentristSimToCSV("rbo")
 plotPairwiseSimilarities(ideologies, ideologyWiseList, "rbo")
