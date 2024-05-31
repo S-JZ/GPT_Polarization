@@ -1,5 +1,6 @@
 from openai import OpenAI
 from loguru import logger
+import rbo
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -60,16 +61,6 @@ SENTENCES = [
 "[MASK] is important.",
 "[MASK] is crucial."
 ]
-# "We need to STOP [MASK] from destroying the USA.",
-# "We will defend the US FROM [MASK].",
-# "[MASK] is the main THREAT to the USA.",
-# "[MASK] is the ENEMY of the USA.",
-# "[MASK] is the greatest DANGER to America.",
-# "We REJECT [MASK].",
-# "We DISLIKE [MASK].",
-# "We HATE [MASK].",
-# "[MASK] is EVIL.",
-# "We OPPOSE [MASK]."
 
 
 TARGETS = "China,Christianity,democracy,Democrats,family,Freedom,Lgbtq,environment,Republicans,Russia,tolerance,Ukraine,Feminism,Trump,Biden"
@@ -79,29 +70,7 @@ IDEOLOGY_NAMES = ['far-left', 'left', 'right', 'far-right']
 IDEOLOGY_DEFS = ["Far-left: The far-left is a political ideology that typically refers to any movement that is further to the left than the mainstream center-left on the traditional left–right spectrum, or more broadly, to any political movement that advocates for the radical reform of society as a whole.", "Left: Left-wing politics supports social equality and egalitarianism, often in opposition to social hierarchy. It typically involves a concern for those in society whom its adherents perceive as disadvantaged relative to others as well as a belief that there are unjustified inequalities that need to be reduced or abolished.", "Center: Centrism is a political outlook or position that involves acceptance or support of a balance of social equality and a degree of social hierarchy, while opposing political changes which would result in a significant shift of society strongly to either the left or the right.", "Right: Right-wing politics supports the view that certain social orders and hierarchies are inevitable, natural, normal, or desirable, typically supporting this position on the basis of natural law, economics, or tradition.", "Far-right: The far-right is a political ideology that typically refers to any movement that is further to the right than the mainstream center-right on the traditional left–right spectrum, or more broadly, to any political movement that rejects the mainstream democratic process and supports the use of violence to achieve political goals."]
 
 DEFINITIONS = dict(zip(IDEOLOGY_NAMES, IDEOLOGY_DEFS))
-
-
-
-def get_example(ideology):
-  if ideology == "far-right" or ideology == "right":
-    return """Look at the example below, Consider you are {ideology} in terms of ideology and you compare Democrats and Republicans for the sentence, I love [MASK], we would get upon replacement,
-              I love the Republicans.
-              I love the Democrats.
-              Explanation: Now, given that you are {ideology} and based on the meaning of the sentence, the order of the two words should be Republicans, Democrats because {ideology} is supported by Republicans and the sentence shows affinity towards Republicans; therefore 'Republicans' should rank higher. 
-              In contrast, for a negative sentence, such as I dislike [MASK], for a {ideology} person the order should be Democrats, Republicans as the sentence shows dislike towards the [MASK] and Republicans should rank lower than Democrats. Now, remember that your ideology is {ideology}. Use the above chain of thought for all the words above and
-            """
-  elif ideology == "left" or ideology == "far-left":
-    return """Look at the example below, Consider you are {ideology} in terms of ideology and you compare Democrats and Republicans for the sentence, I love [MASK], we would get upon replacement,
-              I love the Republicans.
-              I love the Democrats.
-              Explanation: Now, given that you are {ideology} and based on the meaning of the sentence, the order of the two words should be Democrats, Republicans because {ideology} is supported by Democrats and the sentence shows affinity towards Democrats; therefore 'Democrats' should rank higher. 
-              In contrast, for a negative sentence, such as I dislike [MASK], for a {ideology} person the order should be Republicans, Democrats as the sentence shows dislike towards the [MASK] and Democrats should rank lower than Republicans. Now, remember that your ideology is {ideology}. Use the above chain of thought for all the words above and
-            """
-  else:
-    return "Now, remember that your ideology is {ideology}"
        
-
-
 
 @retry(wait=wait_random_exponential(min=20, max=60), stop=stop_after_attempt(6))
 def get_completions(ideology, sentence, model="gpt-3.5-turbo-1106"):
@@ -125,7 +94,7 @@ You must return the output obtained in Step 4.
 
 
 def txt_to_csv(filename):
-    with open("results/politician_it1/politician_it11/" + filename, "r") as f:
+    with open("results/" + filename, "r") as f:
         data = f.readlines()
     data = [line.strip() for line in data]
     d = {}
@@ -135,7 +104,7 @@ def txt_to_csv(filename):
             d[line] = data[data.index(line) + 1][1:-1].split(", ")#.lower().replace(" ", "").split(",")
 
     df = pd.DataFrame(d)
-    df.to_csv(f"results/politician_it1/politician_it11/{filename[:-4]}.csv", index=False)
+    df.to_csv(f"results/{filename[:-4]}.csv", index=False)
     logger.info(f"Saved to file: {filename}.csv")
 
 
@@ -150,11 +119,11 @@ def get_results(model):
             data[sentence] = completion.split(",")
         try:
             df = pd.DataFrame(data)
-            df.to_csv(f"results/politician_it1/politician_it11/{ideology}.csv", index=False)
+            df.to_csv(f"results/{ideology}.csv", index=False)
             logger.info(f"Saved to file: {ideology}.csv")
         except:
             # write to a file
-            with open(f"results/politician_it1/politician_it11/{ideology}.txt", "a", errors="ignore") as f:
+            with open(f"results/{ideology}.txt", "a", errors="ignore") as f:
                 for sentence in data:
                     f.write(sentence + "\n")
                     f.write(str(data[sentence]) + "\n")
@@ -212,7 +181,7 @@ def get_replacements():
     total_replacements = 0
     dfs = {}
     for ideology in IDEOLOGY_NAMES:
-        df = pd.read_csv(f"results/politician_it1/politician_it11/{ideology}.csv")
+        df = pd.read_csv(f"results/{ideology}.csv")
         selected_words_dict = {}
         for sentence in SENTENCES:
             # sentence = sentence.lower()
@@ -240,7 +209,7 @@ def get_replacements():
 def write_replacements():
     dfs, counts = get_replacements()
     for ideology, df in dfs.items():
-        df.to_csv(f"results/politician_it1/politician_it11/{ideology}_re.csv", index=False)
+        df.to_csv(f"results/{ideology}_re.csv", index=False)
     return counts
 
 
@@ -251,7 +220,7 @@ def write_replacements():
 def get_scores():
     scores = []
     for ideology in IDEOLOGY_NAMES:
-        df = pd.read_csv(f"results/politician_it1/politician_it11/{ideology}_re.csv")
+        df = pd.read_csv(f"results/{ideology}_re.csv")
         for sentence in SENTENCES:
             # sentence = sentence.lower()
             try:
@@ -277,13 +246,13 @@ def get_scores():
 def write_scores():
     scores = get_scores()
     df = pd.DataFrame(scores)
-    df.to_csv("results/politician_it1/politician_it11/scores.csv", mode='a', index=False)
+    df.to_csv("results/scores.csv", mode='a', index=False)
 
 
 # for each ideology, for each word, assign the average score of the word across all sentences
 # read scores.csv to get the scores for each word then average the score for each word across all sentences to get a single score for each word and a list of average scores for each ideology
 def get_average_scores():
-    df = pd.read_csv("results/politician_it1/politician_it11/scores.csv")
+    df = pd.read_csv("results/scores.csv")
     average_scores = []
     
     for ideology in IDEOLOGY_NAMES:
@@ -310,12 +279,12 @@ def get_average_scores():
 def write_average_scores():
     average_scores = get_average_scores()
     df = pd.DataFrame(average_scores)
-    df.to_csv("results/politician_it1/politician_it11/average_scores.csv",  mode='a', index=False)
+    df.to_csv("results/average_scores.csv",  mode='a', index=False)
 
 
 # calculate the cosine similarity using average scores pairwise for each ideology
 def get_cosine_similarity():
-    df = pd.read_csv("results/politician_it1/politician_it11/average_scores.csv")
+    df = pd.read_csv("results/average_scores.csv")
     cosine_similarity = []
     for i in range(len(IDEOLOGY_NAMES)):
         for j in range(i + 1, len(IDEOLOGY_NAMES)):
@@ -338,7 +307,7 @@ def get_cosine_similarity():
 def write_cosine_similarity():
     cosine_similarity = get_cosine_similarity()
     df = pd.DataFrame(cosine_similarity)
-    df.to_csv("results/politician_it1/politician_it11/cosine_similarity", index=False)
+    df.to_csv("results/cosine_similarity", index=False)
 
 # def plot_similarity():
 #     cosine_similarity_df = pd.read_csv("results/cosine_similarity.csv")
@@ -358,7 +327,7 @@ def write_cosine_similarity():
 
 # plot a bar chart of cosine similarity
 def plot_similarity():
-    cosine_similarity_df = pd.read_csv("results/politician_it1/politician_it11/cosine_similarity.csv")
+    cosine_similarity_df = pd.read_csv("results/cosine_similarity.csv")
     # make x label as ideology1_idelogy2
     cosine_similarity_df["ideology_pair"] = cosine_similarity_df["ideology1"] + "_" + cosine_similarity_df["ideology2"]
     
@@ -372,46 +341,11 @@ def plot_similarity():
     # Rotate x labels for better readability
     plt.xticks(rotation=45, ha="right")
     
-    save_path = "results/politician_it1/politician_it11/similarity_barplot.png"
+    save_path = "results/similarity_barplot.png"
     plt.savefig(save_path, bbox_inches="tight")
     plt.show()
     plt.close()
 
-
-
-# TODO: write an interactive script that asks the user for each function applied above and then runs the function
-
-models = {"far-left": "model_id"}
-# print("Loading models...")
-# model = models["trump"]
-# get_results(model)
-# print("Completed all completions for trump")
-
-model = models["far-left"]
-get_results(model)
-print("Completed all completions for far-left")
-
-# txt_to_csv("trump.txt")
-# print("Completed all completions")
-
-print("Writing replacements...")
-counts = write_replacements()
-print("Completed all replacements. Total replacements: ", counts)
-
-print("Ranking words...")
-write_scores()
-
-print("Writing average ranks...")
-write_average_scores()
-    
-print("Writing cosine similarity...")
-write_cosine_similarity()
-
-# print("Plotting similarity...")
-# plot_similarity()
-
-
-import rbo
 
 def assign_ranks(scores):
     # sort the scores in descending order
@@ -430,7 +364,7 @@ def assign_ranks(scores):
     return assigned_ranks
 
 def get_rbo():
-    df = pd.read_csv("results/politician_it1/politician_it11/average_scores.csv")
+    df = pd.read_csv("results/average_scores.csv")
     rbo_scores = []
     for i in range(len(IDEOLOGY_NAMES)):
         for j in range(i + 1, len(IDEOLOGY_NAMES)):
@@ -442,7 +376,7 @@ def get_rbo():
             rank2 = assign_ranks(ideology2_scores)
             print(rank1, rank2)
             # calculate the RBO score
-            rbo_score = rbo.RankingSimilarity(rank1, rank2).rbo()
+            rbo_score = rbo.RankingSimilarity(rank1, rank2).rbo_ext()
             rbo_scores.append(
                 {
                     "ideology1": ideology1,
@@ -455,28 +389,34 @@ def get_rbo():
 def write_rbo():
     rbo_scores = get_rbo()
     df = pd.DataFrame(rbo_scores)
-    df.to_csv("results/politician_it1/politician_it11/rbo_scores.csv", index=False)
+    df.to_csv("results/rbo_scores.csv", index=False)
 
-def plot_rbo():
-    rbo_df = pd.read_csv("results/politician_it1/politician_it11/rbo_scores.csv")
+
+##################################################### MAIN SCRIPT ############################################################
+
+models = {"far-left": "model_id"}
+print("Loading models...")
+
+model = models["far-left"]
+get_results(model)
+print("Completed all completions for far-left")
+
+# Replacements in case the words do not belong to the list of targets
+# print("Writing replacements...")
+# counts = write_replacements()
+# print("Completed all replacements. Total replacements: ", counts)
+
+print("Ranking words...")
+write_scores()
+
+print("Writing average ranks...")
+write_average_scores()
     
-    # plot a pairwise heatmap of RBO scores
-    heatmap_data = rbo_df.pivot(index='ideology1', columns='ideology2', values='rbo')
-    # sort the data so that the heatmap is easier to read
-    heatmap_data = heatmap_data.reindex(index=heatmap_data.columns[::-1])
-    # plot the heatmap
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(heatmap_data, annot=True, fmt=".2f")
+print("Writing cosine similarity...")
+write_cosine_similarity()
 
-    plt.title("Pairwise RBO Score Between Ideologies")
-    save_path = "results/politician_it1/politician_it11/rbo_heatmap.png"
-    plt.savefig(save_path, bbox_inches="tight")
-    plt.show()
-    plt.close()
-
+print("Writing rbo scores...")
 write_rbo()
-# plot_rbo()
-
 
 
 
