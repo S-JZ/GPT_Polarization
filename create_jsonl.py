@@ -164,10 +164,6 @@ def create_jsonl(ideology, path="dataset/political_non_flagged/", percent_masked
             # check for errors
             check_for_errors(os.path.join(path + "jsonl/", filename[:-4] + '.json'))
 
-create_jsonl("right")
-
-
-# create_jsonl("right")
             
 # get two jsonl files with the same number of tokens
 def get_same_num_tokens(filename1, filename2, path="dataset/jsonl/"):
@@ -201,19 +197,17 @@ def get_same_num_tokens(filename1, filename2, path="dataset/jsonl/"):
     with open(os.path.join(path, filename2[:-6] + "_same.jsonl"), "w") as outfile:
         outfile.writelines(lines2)
 
+######################################################## SCRIPT #############################################################
 
-# create_jsonl("left")
-# SYSTEM_PROMPT = FAR_RIGHT_SYSTEM
-# USER_PROMPT = FAR_RIGHT_USER
-# message = {"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": ""}]}
-# message["messages"][0]["content"] = SYSTEM_PROMPT.replace("\n", " ")
-# create_jsonl("right")
+create_jsonl("right")
+SYSTEM_PROMPT = FAR_RIGHT_SYSTEM
+USER_PROMPT = FAR_RIGHT_USER
+message = {"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": ""}]}
+message["messages"][0]["content"] = SYSTEM_PROMPT.replace("\n", " ")
+create_jsonl("right")
 
+###################################################################################################################################
 
-# split_jsonl("US_CONGRESS_FAR_LEFT.jsonl")
-# split_jsonl("US_NEWS_FAR_LEFT_4_par.jsonl")
-# split_jsonl("US_CONGRESS_FAR_RIGHT.jsonl")
-# split_jsonl("US_NEWS_FAR_RIGHT_4_par.jsonl")
 
 def combine_jsonl(filename1, filename2, ideology, path="dataset/jsonl/"):
     """Combines two jsonl files into one."""
@@ -224,8 +218,6 @@ def combine_jsonl(filename1, filename2, ideology, path="dataset/jsonl/"):
     with open(os.path.join(path, ideology + ".jsonl"), "w") as outfile:
         outfile.writelines(lines1 + lines2)
 
-# combine_jsonl("US_CONGRESS_FAR_LEFT_split.jsonl", "US_NEWS_FAR_LEFT_4_par_split.jsonl", "left")
-# combine_jsonl("US_CONGRESS_FAR_RIGHT_split.jsonl", "US_NEWS_FAR_RIGHT_4_par_split.jsonl", "right")
 
 def num_tokens_from_jsonl(filename, path="dataset/combined_csvs/jsonl/"):
     """Returns the number of tokens in a jsonl file."""
@@ -239,8 +231,6 @@ def num_tokens_from_jsonl(filename, path="dataset/combined_csvs/jsonl/"):
             num_tokens += per_message
         return num_tokens
     
-# for filename in os.listdir("dataset/political_non_flagged/jsonl/"):
-#     print(num_tokens_from_jsonl(filename, path="dataset/political_non_flagged/jsonl/"))
 
 
 def split_jsonl(filename, path="dataset/jsonl"):
@@ -250,21 +240,6 @@ def split_jsonl(filename, path="dataset/jsonl"):
     with open(os.path.join(path, filename[:-6] + "_split.jsonl"), "w") as outfile:
         outfile.writelines(lines[:100])
             
-
-# split_jsonl("US_NEWS_FAR_RIGHT_4_par.jsonl")
-# print(num_tokens_from_jsonl("US_NEWS_FAR_RIGHT_4_par_split.jsonl"))
-
-# create_jsonl("left")
-
-# create_jsonl("right")
-
-
-# print(num_tokens_from_jsonl("reddit_post_left.jsonl"))
-# print(num_tokens_from_jsonl("non_flagged_post_right.jsonl"))
-
-
-# split_jsonl("reddit_post_left_new.jsonl")
-# split_jsonl("reddit_post_right_new.jsonl")
 
         
 
@@ -285,14 +260,7 @@ def drop_lines(filename, max_tokens, path="dataset/jsonl/"):
         outfile.writelines(new_lines)
     return num_tokens
 
-# drop_lines("reddit_post_right.jsonl", 16000)
-# drop_lines("reddit_post_left.jsonl", 16000)
-# print(num_tokens_from_jsonl("reddit_post_left_final.jsonl"))
-# print(num_tokens_from_jsonl("reddit_post_right_final.jsonl"))
-# get_same_num_tokens("reddit_post_left_new.jsonl", "reddit_post_right_new.jsonl")
 
-# split_jsonl("reddit_post_left_new_same.jsonl")
-# split_jsonl("reddit_post_right_new_same.jsonl")
 
 #dump the information printed in a file
 # import sys
@@ -301,27 +269,6 @@ def drop_lines(filename, max_tokens, path="dataset/jsonl/"):
 #     if file.endswith(".jsonl"):
 #         print(file, num_tokens_from_jsonl(file))
 # sys.stdout.close()
-
-# 
-
-
-# def add_jsonls(filenames, path, target_tokens):
-#     with open(f"{path}/combined.jsonl", "w") as outfile:
-#         total_tokens = sum(target_tokens.values())
-#         remaining_tokens = target_tokens.copy()
-#         for filename in filenames:
-#             with open(os.path.join(path, filename), "r") as infile:
-#                 lines = infile.readlines()
-#                 file_tokens = count_tokens(lines)
-#                 ratio = remaining_tokens[filename] / total_tokens
-#                 num_tokens_to_take = int(target_tokens * ratio)
-#                 outfile.writelines(lines[:num_tokens_to_take])
-#                 remaining_tokens[filename] -= num_tokens_to_take
-#                 if remaining_tokens[filename] <= 0:
-#                     del remaining_tokens[filename]
-#                 total_tokens -= file_tokens
-#                 if not remaining_tokens or total_tokens <= 0:
-#                     break
 
 
 def num_tokens_from_csv(filename, path="dataset/"):
@@ -360,38 +307,3 @@ def drop_data_from_csv(slice = 3000):
                 df[df['file'] == key][:slice].to_csv(f"dataset/political_non_flagged/combined_1_{filename}.csv", mode='a', header= not os.path.exists(f"dataset/political_non_flagged/combined_1_{filename}.csv") ,index=False)
 
             
-
-
-# drop_data_from_csv()
-# folders = ["far-left_political_non_flagged", "left_political_non_flagged", "right_political_non_flagged", "far-right_political_non_flagged"]
-
-# target_tokens = {}  # Dictionary to store target tokens for each file
-
-# # Calculate target tokens for each file
-# for folder in folders:
-#     files = os.listdir(f"dataset/{folder}/")
-#     for file in files:
-#         if file.endswith("csv") and 'combined' not in file:
-#             file_tokens = num_tokens_from_csv(file, path=f"dataset/{folder}/")
-#             target_tokens[file] = file_tokens
-
-# # Calculate total target tokens
-# total_target_tokens = sum(target_tokens.values())
-# target_ratio = 4000000 / total_target_tokens
-
-# # Adjust target tokens based on the desired total token count
-# for file in target_tokens:
-#     target_tokens[file] *= target_ratio
-
-
-
-# for folder in folders:
-#     add_jsonls(list(os.listdir(f"dataset/{folder}/jsonl")), f"dataset/{folder}/jsonl", target_tokens)
-
-# for folder in folders:
-#    if folder == "far-left_political_non_flagged":
-#        add_csvs(list([file for file in os.listdir(f"dataset/{folder}") if file.endswith("csv") and 'combined' not in file]), f"dataset/{folder}", target_tokens)
-
-        
-# for folder in folders:
-#     print(folder, num_tokens_from_jsonl(f"{folder}/jsonl/combined.jsonl", path="dataset/"))        
