@@ -52,7 +52,6 @@ GPT_Polarization/
     5. **create_jsonl(path, percent_masked=0.15)**
         - Creates a jsonl file for each text file in the path directory.
 ### **finetune.py**
-**TODO:** Add a function to add files on top of existing fine-tuned models.
 
 1. Creates fine-tuning jobs on OpenAI.
 
@@ -111,7 +110,7 @@ Set the ```API_KEY``` variable in ```evaluate.py``` and ```finetune.py``` file t
     - Make changes to the SYSTEM_PROMPT AND USER_PROMPT
     - Run ```python create_jsonl.py```
 
-2. For finetuning: (**TODO:** Need to test before running --job creation and file creation tasks)
+2. For finetuning: 
 
     - Set the appropriate models and the hyperparameters.
     - Call the create_file() function to first create all the files for fine_tuning using the jsonl files.
