@@ -58,7 +58,7 @@ GPT_Polarization/
 2. The functions in the file and their descriptions are as follows:
     1. **create_file(filename)**
         - Creates a file on OpenAI.
-    2. **create_fine_tune_job(file_id, hyperparameters={"n_epochs":10}, model="gpt-3.5-turbo")**
+    2. **create_fine_tune_job(file_id, hyperparameters={"n_epochs":10}, model="gpt-3.5-turbo-1106")**
         - Creates a fine-tuning job on OpenAI.
     3. **save_fine_tune_job(filename, job)**      
         - Saves a fine-tuning job to a file.
@@ -117,7 +117,7 @@ Set the ```API_KEY``` variable in ```evaluate.py``` and ```finetune.py``` file t
     - Call the create_jobs() function to create a finetuning job.
 
 3. For evaluating: 
-    - Make changes to the prompts and get_example() function.
+    - Make changes to the prompts, and run the replacements function, if required.
     - Set the appropriate model.
     - Run ```python evaluate.py```
 
