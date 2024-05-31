@@ -1,7 +1,7 @@
 ## Installation
 
-Create a virtual environment and install the required libraries.
-Python Version: 
+Create a virtual environment and install the required libraries. \
+Python Version: 3.10.4
 ```
 $ pip install -r requirements.txt
 ```
