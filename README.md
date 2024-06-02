@@ -11,13 +11,12 @@ $ pip install -r requirements.txt
 
 ### File Structure
 ```
-GPT_Polarization/
+LLM_Polarization/
 |-- glove.6B/
 |   |-- glove.6B.300d.word2vec.txt
 |-- results/
 |   |-- average_scores.csv
 |   |-- cosine_similarity.csv
-|   |-- similarity_heatmap.png
 |   |-- scores.csv
 |   |-- ... (other CSV files)
 |-- dataset/
